@@ -1,0 +1,9 @@
+<h1>Зарегистрировать чек</h1>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Отправить чек</button>
+</form>
+
+<a href="{% url 'receipt-list' %}">Назад к моим чекам</a>
