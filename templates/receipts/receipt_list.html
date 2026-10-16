@@ -34,7 +34,11 @@
 
         {% if receipts %}
             <div class="receipts-table-wrap">
-                <table class="receipts-table">
+                <table class="receipts-table"
+                       data-api-url="{% url 'api-receipt-list' %}"
+                       data-icon-pending="{% static 'images/status-pending.png' %}"
+                       data-icon-approved="{% static 'images/status-approved.png' %}"
+                       data-icon-rejected="{% static 'images/status-rejected.png' %}">
                     <thead>
                         <tr>
                             <th scope="col">Дата покупки</th>
@@ -46,12 +50,14 @@
                     </thead>
                     <tbody>
                         {% for receipt in receipts %}
-                            <tr>
+                            <tr data-receipt-id="{{ receipt.id }}"
+                                data-receipt-status="{{ receipt.status }}"
+                                data-rejection-reason="{{ receipt.rejection_reason }}">
                                 <td class="receipts-table__date">
                                     <span class="receipts-table__label">Дата покупки</span>
                                     {{ receipt.purchase_time|time:"H:i" }} {{ receipt.purchase_date|date:"d.m.Y" }}
                                 </td>
-                                <td>
+                                <td data-receipt-status-cell aria-live="polite">
                                     <span class="receipts-table__label">Статус</span>
                                     {% if receipt.status == "pending" %}
                                         <span class="receipt-status receipt-status--pending">
@@ -89,7 +95,7 @@
                                     <span class="receipts-table__label">Информация</span>
                                     <div class="receipt-information">
                                         <img src="{% static 'images/info-circle.png' %}" alt="">
-                                        <span>
+                                        <span data-receipt-info>
                                             {% if receipt.status == "rejected" %}
                                                 {{ receipt.rejection_reason }}
                                             {% elif receipt.status == "pending" %}
@@ -157,4 +163,8 @@
         {% endif %}
     </section>
 </main>
+{% endblock %}
+
+{% block extra_scripts %}
+    <script src="{% static 'js/receipt-status-polling.js' %}" defer></script>
 {% endblock %}
