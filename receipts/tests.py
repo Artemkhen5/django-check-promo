@@ -139,3 +139,45 @@ class ReceiptFormTest(TestCase):
             fp=self.valid_data["fp"],
         )
         self.assertEqual(receipt.status, Receipt.Status.PENDING)
+
+
+class ReceiptListAPITests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.user = user_model.objects.create(
+            username="api-user",
+            password="test-password-123",
+        )
+        self.other_user = user_model.objects.create(
+            username="other-api-user",
+            password="test-password-123",
+        )
+
+        self.own_receipt = self.create_receipt(self.user, "fn-own")
+        self.other_receipt = self.create_receipt(self.other_user, "fn-other")
+
+    def create_receipt(self, user, fn):
+        return Receipt.objects.create(
+            fn=fn,
+            fd="98765",
+            fp=f"fp-{fn}",
+            purchase_date=date(2026, 10, 15),
+            purchase_time="12:30",
+            amount=Decimal("1500.00"),
+            user=user,
+        )
+
+    def test_unauthenticated_user_cannot_access_api(self):
+        response = self.client.get(reverse("api-receipt-list"))
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_authenticated_user_sees_only_own_receipts(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("api-receipt-list"))
+
+        self.assertEqual(response.status_code, 200)
+        returned_ids = {item["id"] for item in response.json()}
+
+        self.assertEqual(returned_ids, {self.own_receipt.id})
