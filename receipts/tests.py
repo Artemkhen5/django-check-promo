@@ -16,7 +16,7 @@ from receipts.models import Receipt
 )
 class ReceiptFormTest(TestCase):
     def setUp(self):
-        self.user = get_user_model().objects.create(
+        self.user = get_user_model().objects.create_user(
             username="test-user ",
             password="test-password-123"
         )
@@ -57,7 +57,7 @@ class ReceiptFormTest(TestCase):
 
         self.assertTrue(form.is_valid(), form.errors)
 
-    def test_amount_bellow_minimum_value_is_invalid(self):
+    def test_amount_below_minimum_value_is_invalid(self):
         data = {**self.valid_data, "amount": "999.99"}
         form = ReceiptForm(data=data)
 
@@ -144,11 +144,11 @@ class ReceiptFormTest(TestCase):
 class ReceiptListAPITests(TestCase):
     def setUp(self):
         user_model = get_user_model()
-        self.user = user_model.objects.create(
+        self.user = user_model.objects.create_user(
             username="api-user",
             password="test-password-123",
         )
-        self.other_user = user_model.objects.create(
+        self.other_user = user_model.objects.create_user(
             username="other-api-user",
             password="test-password-123",
         )
@@ -181,3 +181,52 @@ class ReceiptListAPITests(TestCase):
         returned_ids = {item["id"] for item in response.json()}
 
         self.assertEqual(returned_ids, {self.own_receipt.id})
+
+
+class ReceiptAdminFormTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+
+        self.user = user_model.objects.create_user(
+            username="receipt-owner",
+            password="test-password-123",
+        )
+        self.admin_user = user_model.objects.create_superuser(
+            username="admin-test",
+            password="test-password-123",
+            email="admin@example.com",
+        )
+        self.receipt = Receipt.objects.create(
+            fn="1234567890",
+            fd="98765",
+            fp="1122334455",
+            purchase_date="2026-10-15",
+            purchase_time="12:30",
+            amount="1500.00",
+            user=self.user,
+        )
+
+    def test_admin_cannot_reject_receipt_without_reason(self):
+        self.client.force_login(self.admin_user)
+
+        url = reverse(
+            "admin:receipts_receipt_change",
+            args=[self.receipt.pk],
+        )
+        response = self.client.post(
+            url,
+            {
+                "status": Receipt.Status.REJECTED,
+                "rejection_reason": "",
+                "_save": "Save",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "rejection_reason",
+            response.context["adminform"].form.errors,
+        )
+
+        self.receipt.refresh_from_db()
+        self.assertEqual(self.receipt.status, Receipt.Status.PENDING)
