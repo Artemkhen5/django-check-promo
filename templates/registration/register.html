@@ -1,9 +1,22 @@
-<body>
-<h1>Регистрация</h1>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Зарегистрироваться</button>
-</form>
-<a href="{%  url 'login' %}">Уже есть аккаунт? Войти</a>
-</body>
+{% extends 'base.html' %}
+
+{% block title %}Регистрация — Чек на удачу{% endblock %}
+
+{% block content %}
+<main class="auth-page">
+    <section class="auth-card" aria-labelledby="auth-title">
+        <h1 class="auth-card__heading" id="auth-title">Создать аккаунт</h1>
+        <p class="auth-card__description">Зарегистрируйтесь, чтобы участвовать в акции</p>
+
+        <form class="auth-form" method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Зарегистрироваться</button>
+        </form>
+
+        <p class="auth-card__footer">
+            Уже есть аккаунт? <a href="{% url 'login' %}">Войти</a>
+        </p>
+    </section>
+</main>
+{% endblock %}

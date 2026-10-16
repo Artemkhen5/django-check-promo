@@ -1,10 +1,25 @@
-<body>
-    <h1>Вход</h1>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">
-            Войти
-        </button>
-    </form>
-</body>
+{% extends 'base.html' %}
+
+{% block title %}Вход — Чек на удачу{% endblock %}
+
+{% block content %}
+<main class="auth-page">
+    <section class="auth-card" aria-labelledby="auth-title">
+        <h1 class="auth-card__heading" id="auth-title">Вход</h1>
+        <p class="auth-card__description">Войдите, чтобы посмотреть свои чеки</p>
+
+        <form class="auth-form" method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            {% if next %}
+                <input type="hidden" name="next" value="{{ next }}">
+            {% endif %}
+            <button type="submit">Войти</button>
+        </form>
+
+        <p class="auth-card__footer">
+            Нет аккаунта? <a href="{% url 'register' %}">Зарегистрироваться</a>
+        </p>
+    </section>
+</main>
+{% endblock %}

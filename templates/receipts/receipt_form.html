@@ -1,3 +1,8 @@
+{% extends 'base.html' %}
+
+{% block title %}Регистрация чека — Чек на удачу{% endblock %}
+
+{% block content %}
 <h1>Зарегистрировать чек</h1>
 
 <form method="post">
@@ -7,3 +12,4 @@
 </form>
 
 <a href="{% url 'receipt-list' %}">Назад к моим чекам</a>
+{% endblock %}
