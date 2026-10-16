@@ -1,15 +1,76 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Регистрация чека — Чек на удачу{% endblock %}
 
 {% block content %}
-<h1>Зарегистрировать чек</h1>
+<main class="receipt-entry-page">
+    <section class="receipt-entry-card" aria-labelledby="receipt-entry-title">
+        <h1 class="receipt-entry-card__title" id="receipt-entry-title">Зарегистрируйте чек</h1>
+        <p class="receipt-entry-card__description">Введите данные чека, чтобы принять участие в акции</p>
+        <p class="receipt-entry-card__promo-period">
+            Период акции: {{ promo_start_date|date:"d.m.Y" }} — {{ promo_end_date|date:"d.m.Y" }}
+        </p>
 
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Отправить чек</button>
-</form>
+        <form class="receipt-entry-form" method="post" novalidate
+              data-promo-start="{{ promo_start_date|date:'Y-m-d' }}"
+              data-promo-end="{{ promo_end_date|date:'Y-m-d' }}">
+            {% csrf_token %}
 
-<a href="{% url 'receipt-list' %}">Назад к моим чекам</a>
+            {% if form.non_field_errors %}
+                <div class="receipt-entry-form__errors" data-form-errors role="alert">
+                    {{ form.non_field_errors }}
+                </div>
+            {% else %}
+                <div class="receipt-entry-form__errors" data-form-errors role="alert" hidden></div>
+            {% endif %}
+            <div class="receipt-entry-form__feedback" data-form-feedback role="status" aria-live="polite" hidden></div>
+
+            <div class="receipt-entry-form__field">
+                <label for="{{ form.fn.id_for_label }}">ФН</label>
+                {{ form.fn }}
+                <div class="receipt-entry-form__field-error" data-field-error="fn" aria-live="polite">{% if form.fn.errors %}{{ form.fn.errors }}{% endif %}</div>
+            </div>
+
+            <div class="receipt-entry-form__field">
+                <label for="{{ form.fd.id_for_label }}">Номер чека</label>
+                {{ form.fd }}
+                <div class="receipt-entry-form__field-error" data-field-error="fd" aria-live="polite">{% if form.fd.errors %}{{ form.fd.errors }}{% endif %}</div>
+            </div>
+
+            <div class="receipt-entry-form__field">
+                <label for="{{ form.fp.id_for_label }}">ФП</label>
+                {{ form.fp }}
+                <div class="receipt-entry-form__field-error" data-field-error="fp" aria-live="polite">{% if form.fp.errors %}{{ form.fp.errors }}{% endif %}</div>
+            </div>
+
+            <fieldset class="receipt-entry-form__datetime">
+                <legend>Дата покупки</legend>
+                <div class="receipt-entry-form__datetime-control">
+                    <label class="receipt-entry-form__visually-hidden" for="{{ form.purchase_date.id_for_label }}">Дата</label>
+                    {{ form.purchase_date }}
+                    <span class="receipt-entry-form__datetime-divider" aria-hidden="true"></span>
+                    <label class="receipt-entry-form__visually-hidden" for="{{ form.purchase_time.id_for_label }}">Время</label>
+                    {{ form.purchase_time }}
+                </div>
+                <div class="receipt-entry-form__field-error" data-field-error="purchase_date" aria-live="polite">{% if form.purchase_date.errors %}{{ form.purchase_date.errors }}{% endif %}</div>
+                <div class="receipt-entry-form__field-error" data-field-error="purchase_time" aria-live="polite">{% if form.purchase_time.errors %}{{ form.purchase_time.errors }}{% endif %}</div>
+            </fieldset>
+
+            <div class="receipt-entry-form__field">
+                <label for="{{ form.amount.id_for_label }}">Сумма</label>
+                {{ form.amount }}
+                <div class="receipt-entry-form__field-error" data-field-error="amount" aria-live="polite">{% if form.amount.errors %}{{ form.amount.errors }}{% endif %}</div>
+            </div>
+
+            <button class="receipt-entry-form__submit" type="submit">Загрузить</button>
+        </form>
+
+        <a class="receipt-entry-card__back" href="{% url 'receipt-list' %}">Назад к моим чекам</a>
+    </section>
+</main>
+{% endblock %}
+
+{% block extra_scripts %}
+    <script src="{% static 'js/receipt-form.js' %}" defer></script>
 {% endblock %}

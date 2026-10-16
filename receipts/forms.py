@@ -17,6 +17,22 @@ class ReceiptForm(forms.ModelForm):
             "purchase_time",
             "amount",
         )
+        widgets = {
+            "fn": forms.TextInput(attrs={"inputmode": "numeric", "autocomplete": "off"}),
+            "fd": forms.TextInput(attrs={"inputmode": "numeric", "autocomplete": "off"}),
+            "fp": forms.TextInput(attrs={"inputmode": "numeric", "autocomplete": "off"}),
+            "purchase_date": forms.DateInput(
+                attrs={"type": "date"},
+                format="%Y-%m-%d",
+            ),
+            "purchase_time": forms.TimeInput(
+                attrs={"type": "time"},
+                format="%H:%M",
+            ),
+            "amount": forms.NumberInput(
+                attrs={"min": "1000", "step": "0.01", "inputmode": "decimal"}
+            ),
+        }
 
     def clean_amount(self):
         amount = self.cleaned_data["amount"]

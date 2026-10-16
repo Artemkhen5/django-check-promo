@@ -8,6 +8,7 @@ class Receipt(models.Model):
         PENDING = "pending", "На проверке"
         APPROVED = "approved", "Принят"
         REJECTED = "rejected", "Отклонен"
+        WON = "won", "Вы выиграли"
 
     fn = models.CharField("ФН", max_length=64)
     fd = models.CharField("ФД", max_length=64)

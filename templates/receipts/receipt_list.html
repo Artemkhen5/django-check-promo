@@ -3,38 +3,158 @@
 {% block title %}Мои чеки — Чек на удачу{% endblock %}
 
 {% block content %}
-<h1>Мои чеки</h1>
+{% load static %}
+<header class="site-header">
+    <a class="site-header__brand" href="{% url 'receipt-list' %}">Чек на удачу</a>
 
-<form method="post" action="{% url 'logout' %}">
-    {% csrf_token %}
-    <button type="submit">Выйти</button>
-</form>
+    <nav class="site-header__nav" aria-label="Основная навигация">
+        <a class="site-header__nav-link site-header__nav-link--active" href="{% url 'receipt-list' %}">
+            Личный кабинет
+        </a>
+    </nav>
 
-{% if receipts %}
-    {% for receipt in receipts %}
-        <article>
-            <p>Дата покупки: {{ receipt.purchase_date|date:"d.m.Y" }}</p>
-            <p>Сумма: {{ receipt.amount }} ₽</p>
-            <p>Статус: {{ receipt.get_status_display }}</p>
+    <div class="site-header__account">
+        <span class="site-header__avatar" aria-hidden="true">{{ request.user.username|first|upper }}</span>
+        <span class="site-header__username">{{ request.user.username }}</span>
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button class="site-header__logout" type="submit">Выйти</button>
+        </form>
+    </div>
+</header>
 
-            {% if receipt.rejection_reason %}
-                <p>Причина отказа: {{ receipt.rejection_reason }}</p>
+<main class="receipts-page">
+    <section class="receipts-panel{% if not receipts %} receipts-panel--empty{% endif %}" aria-labelledby="receipts-title">
+        <div class="receipts-panel__heading">
+            <h1 class="receipts-panel__title" id="receipts-title">История чеков</h1>
+            <p class="receipts-count">
+                Чеков внесено: <strong>{{ paginator.count }} шт.</strong>
+            </p>
+        </div>
+
+        {% if receipts %}
+            <div class="receipts-table-wrap">
+                <table class="receipts-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Дата покупки</th>
+                            <th scope="col">Статус</th>
+                            <th scope="col">Сумма чека</th>
+                            <th scope="col">Дата регистрации</th>
+                            <th scope="col">Информация</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for receipt in receipts %}
+                            <tr>
+                                <td class="receipts-table__date">
+                                    <span class="receipts-table__label">Дата покупки</span>
+                                    {{ receipt.purchase_time|time:"H:i" }} {{ receipt.purchase_date|date:"d.m.Y" }}
+                                </td>
+                                <td>
+                                    <span class="receipts-table__label">Статус</span>
+                                    {% if receipt.status == "pending" %}
+                                        <span class="receipt-status receipt-status--pending">
+                                            <img src="{% static 'images/status-pending.png' %}" alt="">
+                                            {{ receipt.get_status_display }}
+                                        </span>
+                                    {% elif receipt.status == "approved" %}
+                                        <span class="receipt-status receipt-status--approved">
+                                            <img src="{% static 'images/status-approved.png' %}" alt="">
+                                            {{ receipt.get_status_display }}
+                                        </span>
+                                    {% elif receipt.status == "won" %}
+                                        <span class="receipt-status receipt-status--won">
+                                            <svg class="receipt-status__gift" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                                                <path d="M3 8h14v9H3zM2 5.5h16V8H2zM10 5.5V17M10 5.5H6.6c-2.6 0-2.5-3 0-3C8.5 2.5 10 5.5 10 5.5Zm0 0h3.4c2.6 0 2.5-3 0-3C11.5 2.5 10 5.5 10 5.5Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" />
+                                            </svg>
+                                            {{ receipt.get_status_display }}
+                                        </span>
+                                    {% elif receipt.status == "rejected" %}
+                                        <span class="receipt-status receipt-status--rejected">
+                                            <img src="{% static 'images/status-rejected.png' %}" alt="">
+                                            {{ receipt.get_status_display }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="receipts-table__amount">
+                                    <span class="receipts-table__label">Сумма чека</span>
+                                    {{ receipt.amount|floatformat:"-2" }} ₽
+                                </td>
+                                <td>
+                                    <span class="receipts-table__label">Дата регистрации</span>
+                                    {{ receipt.created_at|date:"H:i d.m.Y" }}
+                                </td>
+                                <td>
+                                    <span class="receipts-table__label">Информация</span>
+                                    <div class="receipt-information">
+                                        <img src="{% static 'images/info-circle.png' %}" alt="">
+                                        <span>
+                                            {% if receipt.status == "rejected" %}
+                                                {{ receipt.rejection_reason }}
+                                            {% elif receipt.status == "pending" %}
+                                                Чек на проверке
+                                            {% elif receipt.status == "won" %}
+                                                Поздравляем с выигрышем!
+                                            {% else %}
+                                                Чек принят
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if is_paginated %}
+                <nav class="pagination" aria-label="Страницы истории чеков">
+                    {% if page_obj.has_previous %}
+                        <a class="pagination__arrow" href="?page={{ page_obj.previous_page_number }}" aria-label="Предыдущая страница">‹</a>
+                    {% else %}
+                        <span class="pagination__arrow pagination__arrow--disabled" aria-hidden="true">‹</span>
+                    {% endif %}
+
+                    {% for page_number in page_range %}
+                        {% if page_number == paginator.ELLIPSIS %}
+                            <span class="pagination__ellipsis">{{ page_number }}</span>
+                        {% elif page_number == page_obj.number %}
+                            <span class="pagination__page pagination__page--current" aria-current="page">{{ page_number }}</span>
+                        {% else %}
+                            <a class="pagination__page" href="?page={{ page_number }}">{{ page_number }}</a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <a class="pagination__arrow" href="?page={{ page_obj.next_page_number }}" aria-label="Следующая страница">›</a>
+                    {% else %}
+                        <span class="pagination__arrow pagination__arrow--disabled" aria-hidden="true">›</span>
+                    {% endif %}
+                </nav>
             {% endif %}
-        </article>
-    {% endfor %}
 
-    {% if is_paginated %}
-        {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}">Назад</a>
+            <div class="receipts-panel__footer">
+                <p class="review-note">
+                    <img src="{% static 'images/info-circle.png' %}" alt="">
+                    Иногда проверка вашего чека может занять до 5 рабочих дней
+                </p>
+                <a class="primary-button" href="{% url 'receipt-create' %}">
+                    <img src="{% static 'images/receipt-icon.png' %}" alt="">
+                    Зарегистрировать чек
+                </a>
+            </div>
+        {% else %}
+            <div class="empty-receipts">
+                <img class="empty-receipts__illustration" src="{% static 'images/empty-receipt.png' %}" alt="">
+                <h2>Здесь будет история ваших чеков</h2>
+                <p>Вы не добавили еще ни одного чека</p>
+                <a class="primary-button" href="{% url 'receipt-create' %}">
+                    <img src="{% static 'images/receipt-icon.png' %}" alt="">
+                    Зарегистрировать чек
+                </a>
+            </div>
         {% endif %}
-
-        <span>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
-
-        {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}">Вперёд</a>
-        {% endif %}
-    {% endif %}
-{% else %}
-    <p>У вас пока нет чеков.</p>
-{% endif %}
+    </section>
+</main>
 {% endblock %}
